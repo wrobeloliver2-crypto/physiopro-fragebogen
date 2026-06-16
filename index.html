@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Fragebogen – PhysioPro Lübeck</title>
+<style>
+  :root{
+    --green:#2E6B5E; --green-dark:#1f4a40; --light:#E3F0EC; --bg:#F6F8F7;
+    --ink:#1d2520; --muted:#5f6b66; --line:#dfe6e3; --white:#fff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:680px;margin:0 auto;padding:24px 20px 80px}
+  .brand{display:flex;justify-content:center;padding:8px 0 22px}
+  .brand img{height:48px;width:auto}
+  .brand .fallback{font-size:20px;font-weight:700;color:var(--green);letter-spacing:.3px}
+  .intro{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:24px}
+  .who{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .av{width:48px;height:48px;border-radius:50%;background:var(--light);color:var(--green-dark);
+    display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;flex:0 0 auto}
+  .who h1{font-size:18px;font-weight:600;margin:0}
+  .who p{font-size:13px;color:var(--muted);margin:2px 0 0}
+  .intro>p{font-size:14.5px;color:var(--muted)}
+  .group{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:14px}
+  .q{display:block;font-size:15px;font-weight:600;margin-bottom:12px}
+  textarea{width:100%;min-height:74px;border:1px solid var(--line);border-radius:10px;padding:11px 13px;
+    font:inherit;font-size:14.5px;color:var(--ink);resize:vertical;background:#fcfdfc}
+  textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(46,107,94,.12)}
+  .pills{display:flex;flex-wrap:wrap;gap:8px}
+  .pill{border:1px solid var(--line);background:#fcfdfc;color:var(--ink);border-radius:999px;
+    padding:8px 15px;font:inherit;font-size:14px;cursor:pointer;transition:.12s;user-select:none}
+  .pill:hover{border-color:var(--green)}
+  .pill[aria-pressed="true"]{background:var(--light);border-color:var(--green);color:var(--green-dark);font-weight:600}
+  .pill.ok[aria-pressed="true"]{background:#e3f3e8;border-color:#3c9d63;color:#1f6b3c}
+  .other{margin-top:10px;width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 13px;
+    font:inherit;font-size:14.5px;background:#fcfdfc}
+  .other:focus{outline:none;border-color:var(--green)}
+  .actions{margin-top:22px;display:flex;justify-content:flex-end}
+  .submit{background:var(--green);color:#fff;border:none;border-radius:11px;padding:13px 30px;
+    font:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:.12s}
+  .submit:hover{background:var(--green-dark)}
+  .submit:disabled{opacity:.6;cursor:default}
+  .done{display:none;background:var(--white);border:1px solid var(--line);border-radius:16px;
+    padding:40px 28px;text-align:center}
+  .done .check{width:56px;height:56px;border-radius:50%;background:#e3f3e8;color:#2f8a52;
+    display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px}
+  .done h2{font-size:19px;margin-bottom:8px}
+  .done p{font-size:14.5px;color:var(--muted)}
+  .err{display:none;color:#a32d2d;font-size:14px;margin-top:12px;text-align:right}
+  .hint{font-size:12.5px;color:var(--muted);font-weight:400;margin-top:-6px;margin-bottom:10px}
+  .notice{background:#fff;border:1px solid var(--line);border-radius:14px;padding:28px;text-align:center;color:var(--muted)}
+  .notice strong{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <img src="https://physioproluebeck.de/logo.png" alt="PhysioPro Lübeck"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+    <span class="fallback" style="display:none">PhysioPro Lübeck</span>
+  </div>
+
+  <div id="form-area"></div>
+
+  <div class="done" id="doneBox">
+    <div class="check">✓</div>
+    <h2 id="doneTitle">Vielen Dank!</h2>
+    <p>Deine Antworten sind bei uns angekommen.</p>
+  </div>
+
+</div>
+
+<script src="questionnaires.js"></script>
+<script>
+  function param(key, def){
+    var v = new URLSearchParams(location.search).get(key);
+    return v && v.trim() ? v.trim() : def;
+  }
+
+  var typeKey = param('typ', 'profil');
+  var personName = param('name', '');
+  var def = (window.QUESTIONNAIRES && window.QUESTIONNAIRES[typeKey]) || null;
+
+  var area = document.getElementById('form-area');
+
+  function initials(n){
+    if(!n) return 'PP';
+    var parts = n.split(/\s+/).filter(Boolean);
+    return (parts[0]||'').charAt(0).toUpperCase() + (parts[1]||'').charAt(0).toUpperCase() || 'PP';
+  }
+
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  if(!def){
+    area.innerHTML = '<div class="notice"><strong>Kein Fragebogen gefunden.</strong><br>'
+      + 'Bitte überprüfe den Link oder wende dich an PhysioPro.</div>';
+  } else {
+    var greetName = personName ? personName.split(/\s+/)[0] : '';
+    var html = '';
+    html += '<div class="intro"><div class="who">'
+      + '<div class="av">' + esc(initials(personName)) + '</div>'
+      + '<div><h1>' + (greetName ? 'Hallo ' + esc(greetName) + '!' : esc(def.title)) + '</h1>'
+      + '<p>' + esc(def.subtitle) + '</p></div></div>'
+      + '<p>' + esc(def.intro) + '</p></div>';
+
+    def.questions.forEach(function(qq, i){
+      html += '<div class="group"><label class="q">' + esc(qq.q) + '</label>';
+      if(qq.type === 'text'){
+        html += '<textarea data-name="' + esc(qq.name) + '" placeholder="' + esc(qq.placeholder||'') + '"></textarea>';
+      } else {
+        if(qq.multi) html += '<div class="hint">Mehrfachauswahl möglich</div>';
+        html += '<div class="pills" data-name="' + esc(qq.name) + '" data-multi="' + (qq.multi?'true':'false') + '">';
+        qq.options.forEach(function(opt){
+          var cls = 'pill' + (opt.accent==='ok' ? ' ok' : '');
+          var other = opt.other ? ' data-other' : '';
+          html += '<button type="button" class="' + cls + '"' + other + ' aria-pressed="false">' + esc(opt.label) + '</button>';
+        });
+        html += '</div>';
+        if(qq.options.some(function(o){return o.other;})){
+          html += '<input type="text" class="other" data-other-for="' + esc(qq.name) + '" placeholder="' + esc(qq.otherPlaceholder||'Bitte ergänzen') + '" hidden>';
+        }
+      }
+      html += '</div>';
+    });
+
+    html += '<div class="actions"><button type="button" class="submit" id="submitBtn">Absenden</button></div>'
+      + '<div class="err" id="errBox">Es gab ein Problem beim Senden. Bitte versuch es nochmal oder gib uns kurz Bescheid.</div>';
+
+    area.innerHTML = html;
+    document.getElementById('doneTitle').textContent = greetName ? 'Danke, ' + greetName + '!' : 'Vielen Dank!';
+    wireUp();
+  }
+
+  function wireUp(){
+    document.querySelectorAll('.pills').forEach(function(group){
+      var multi = group.dataset.multi === 'true';
+      group.querySelectorAll('.pill').forEach(function(pill){
+        pill.addEventListener('click', function(){
+          var on = pill.getAttribute('aria-pressed') === 'true';
+          if(!multi){ group.querySelectorAll('.pill').forEach(function(p){p.setAttribute('aria-pressed','false');}); }
+          pill.setAttribute('aria-pressed', on ? 'false' : 'true');
+          if(pill.hasAttribute('data-other')){
+            var inp = group.parentElement.querySelector('.other');
+            if(inp){ inp.hidden = pill.getAttribute('aria-pressed') !== 'true'; if(!inp.hidden) inp.focus(); }
+          }
+        });
+      });
+    });
+
+    var btn = document.getElementById('submitBtn');
+    btn.addEventListener('click', function(){
+      var answers = {};
+      document.querySelectorAll('textarea[data-name]').forEach(function(t){
+        if(t.value.trim()) answers[t.dataset.name] = t.value.trim();
+      });
+      document.querySelectorAll('.pills[data-name]').forEach(function(g){
+        var vals = [];
+        g.querySelectorAll('.pill[aria-pressed="true"]').forEach(function(p){
+          if(p.hasAttribute('data-other')) return;
+          vals.push(p.textContent.trim());
+        });
+        var other = g.parentElement.querySelector('.other');
+        if(other && !other.hidden && other.value.trim()) vals.push(other.value.trim());
+        if(vals.length) answers[g.dataset.name] = vals.join(', ');
+      });
+
+      btn.disabled = true; btn.textContent = 'Wird gesendet …';
+      document.getElementById('errBox').style.display = 'none';
+      fetch('/.netlify/functions/submit', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          name: personName || '(ohne Name)',
+          questionnaire: def.label,
+          answers: answers
+        })
+      }).then(function(r){ if(!r.ok) throw new Error();
+        document.getElementById('form-area').style.display='none';
+        document.getElementById('doneBox').style.display='block';
+        window.scrollTo(0,0);
+      }).catch(function(){
+        btn.disabled=false; btn.textContent='Absenden';
+        document.getElementById('errBox').style.display='block';
+      });
+    });
+  }
+</script>
+</body>
+</html>
